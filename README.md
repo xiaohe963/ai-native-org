@@ -1,34 +1,39 @@
-# AI 原生组织设计
+# AI-Native Organization Design
 
-> 当执行工作大量由 agent 承担，组织要重新设计的不是流程，是证据。
+> When agents do the work, organizations must redesign proof—not process.
 
-这个项目研究：组织的决策权、信息流、授权、验收与复盘，在 agent 承担大量执行后应如何重新设计。
+**English** | [中文](README.zh-CN.md)
 
-它不提供组织架构图模板，也不讨论提示词技巧。它提供的是一套**可判定的口径**：什么算完成、谁能拍板、拿什么证明、什么条件下应当推翻。
+This project studies how decision rights, information flow, authorization, acceptance,
+and retrospectives should be redesigned once agents take on much of the execution.
 
-## 立场
+It does not provide org-chart templates or prompt tricks. It provides a set of
+**judgeable conventions**: what counts as done, who may decide, what evidence is
+required, and under what conditions a claim should be overturned.
 
-1. 组织里的隐性约束——风险偏好、什么算好、谁能拍板——等价于软件里的非功能性需求，必须显式化。
-2. 一条没有可证伪条件的设计主张，不算知识，只算措辞。
-3. 决策权和执行能力是两份独立的契约。混在一起是大多数 AI 组织方案的病根。
-4. 产出必须能在真实组织里被检验，而不是在术语上自洽。
+## Stance
 
-## 仓库结构
+1. Hidden organizational constraints—risk appetite, what "good" means, who may say yes—are the equivalent of non-functional requirements in software. They must be made explicit.
+2. A design claim without a falsification condition is not knowledge—it is phrasing.
+3. Decision rights and execution capability are two independent contracts. Conflating them is the root cause of most "AI organization" proposals.
+4. Outputs must be testable in a real organization, not merely coherent in terminology.
 
-| 路径 | 内容 |
+## Repository layout
+
+| Path | Contents |
 | --- | --- |
-| `docs/` | 五份概念与规则：领域模型、决策权、证据、信息流、复盘 |
-| `decisions/` | 15 条 ADR；当前 1 条为「已接受」 |
-| `templates/change-card.md` | 变更卡 v1.1，含 8 条门禁 |
-| `playbooks/` | 设计一条完整方案的步骤 |
-| `evals/` | 对照评估方法 |
-| `cases/` | 真实案例（目前只有模板） |
-| `site/index.html` | 项目主页，可直接部署 GitHub Pages |
-| `workbench/` | 变更卡工作台（Node 后端 + 单页前端） |
+| `docs/` | Five documents: domain model, decision rights, evidence, context flow, feedback (currently in Chinese) |
+| `decisions/` | 15 ADRs; 1 currently accepted |
+| `templates/change-card.md` | Change card v1.1 with eight gates |
+| `playbooks/` | How to design a complete proposal |
+| `evals/` | Comparative evaluation method |
+| `cases/` | Real cases (only a template so far) |
+| `site/index.html` | Project site, ready for GitHub Pages |
+| `workbench/` | Change-card workbench (Node backend + single-page frontend) |
 
-## 快速开始：变更卡工作台
+## Quick start: change-card workbench
 
-需要 Node 18+。
+Requires Node 18+.
 
 ```bash
 cd workbench
@@ -36,27 +41,36 @@ cp config.example.json config.json
 node server.js
 ```
 
-打开 `http://127.0.0.1:8787`。Windows 也可以双击 `workbench/start.bat`（首次需先复制配置）。
+Open `http://127.0.0.1:8787`. On Windows you can also double-click
+`workbench/start.bat` (copy the config first).
 
-工作台会：
+The workbench:
 
-- 用 `workbench/data/cards/*.json` 保存卡的结构化状态（已 gitignore）
-- 从配置的仓库读取 `git status / log / diff`
-- 只把一张卡写成 `runs/<日期>-<slug>.md`，并只提交这一个文件
-- 在服务端强制门禁：未通过时不能标「已授权 / 已验收 / 已登记可达」
+- stores structured card state in `workbench/data/cards/*.json` (gitignored)
+- reads `git status / log / diff` from the configured repository
+- writes one card to `runs/<date>-<slug>.md` and commits **only that file**
+- enforces gates server-side: it refuses to mark a card "authorized / accepted / declared reachable" when the gates fail
 
-## 当前状态（诚实计数）
+## Current state (honest counts)
 
-- 15 条 ADR，1 条已接受（ADR-015：git 作为登记级证据）
-- 5 张变更卡在私有证据档案中；本仓库不包含 `runs/`
-- 0 个真实组织案例；无 L3；没有第二方独立判定
-- 方法论仍处于自我指涉阶段：它验证的是自己的口径，不是外部组织的效果
+- 15 ADRs, 1 accepted (ADR-015: git as a repository-level evidence capability)
+- 5 change cards live in the private evidence archive; this repository does not include `runs/`
+- 0 real organizational cases; no L3; no independent second-party judgment
+- The methodology is still self-referential: it validates its own conventions, not outcomes in an external organization
 
-## 许可证
+## Language status
 
-- 代码（`workbench/`）：MIT，见 `LICENSE`
-- 文档与方法论（`docs/`、`decisions/`、`templates/`、`playbooks/`、`site/`）：CC BY 4.0，见 `LICENSE-docs`
+- The project site is available in [English](site/index.html) and [中文](site/zh.html).
+- The methodology documents, ADRs, and the workbench UI are currently in Chinese.
+- English translations are welcome; when translating an ADR, treat the Chinese original as authoritative and add the translation as a separate file rather than rewriting history.
 
-## 不声称
+## License
 
-本仓库不声称 git 能证明提交者身份、独立评审、测试结果或生产状态；不声称变更卡能提高变更成功率；不声称任何未标注为 L2 以上的主张已经成立。
+- Code (`workbench/`): MIT, see `LICENSE`
+- Documentation and methodology (`docs/`, `decisions/`, `templates/`, `playbooks/`, `site/`): CC BY 4.0, see `LICENSE-docs`
+
+## Not claimed
+
+This repository does not claim that git proves committer identity, independent review,
+test results, or production state; that a change card improves change success rates;
+or that any claim below L2 has been established.
