@@ -168,39 +168,40 @@
   <div class="brand">
     <span class="mark">◆</span>
     <div>
-      <strong>变更卡工作台</strong>
-      <span class="sub">前后端联动 · 读写仓库</span>
+      <strong data-i18n="变更卡工作台">变更卡工作台</strong>
+      <span class="sub" data-i18n="前后端联动 · 读写仓库">前后端联动 · 读写仓库</span>
     </div>
   </div>
   <div class="actions">
-    <button class="btn primary" id="btnNew">新建卡</button>
-    <button class="btn" id="btnBaseline">记录基线</button>
-    <button class="btn" id="btnCommit">提交卡到 runs/</button>
-    <button class="btn" id="btnPreview">预览 markdown</button>
-    <button class="btn danger" id="btnDelete">删除卡</button>
-    <span class="btn filebtn">导入 JSON<input type="file" id="fileImport" accept=".json,application/json"></span>
-    <button class="btn" id="btnExport">导出 JSON</button>
+    <button class="btn primary" id="btnNew" data-i18n="新建卡">新建卡</button>
+    <button class="btn" id="btnBaseline" data-i18n="记录基线">记录基线</button>
+    <button class="btn" id="btnCommit" data-i18n="提交卡到 runs/">提交卡到 runs/</button>
+    <button class="btn" id="btnPreview" data-i18n="预览 markdown">预览 markdown</button>
+    <button class="btn danger" id="btnDelete" data-i18n="删除卡">删除卡</button>
+    <span class="btn filebtn"><span data-i18n="导入 JSON">导入 JSON</span><input type="file" id="fileImport" accept=".json,application/json"></span>
+    <button class="btn" id="btnExport" data-i18n="导出 JSON">导出 JSON</button>
+    <button class="btn" id="btnLang">EN</button>
   </div>
 </header>
 
 <div class="repobar" id="repobar">
   <span class="item"><span class="dot" id="repoDot"></span><span id="repoState">连接中…</span></span>
-  <span class="item">分支 <b id="repoBranch">—</b></span>
+  <span class="item"><span data-i18n="分支">分支</span> <b id="repoBranch">—</b></span>
   <span class="item">HEAD <b id="repoHead">—</b></span>
-  <span class="item">工作区 <b id="repoClean">—</b></span>
+  <span class="item"><span data-i18n="工作区">工作区</span> <b id="repoClean">—</b></span>
   <span class="spacer"></span>
   <span class="saving" id="saveState"></span>
 </div>
 
 <main class="app">
   <aside class="sidebar">
-    <div class="side-head"><span>卡列表</span><span id="cardCount">0</span></div>
+    <div class="side-head"><span data-i18n="卡列表">卡列表</span><span id="cardCount">0</span></div>
     <div id="cardList"></div>
-    <div class="side-note">
+    <div class="side-note" data-i18n-html="不想用命令行：双击 <code>start.bat</code>；或在本目录执行 <code>node server.js</code>，然后打开 <code>http://127.0.0.1:8787</code>。">
       不想用命令行：双击 <code>start.bat</code>；或在本目录执行 <code>node server.js</code>，
       然后打开 <code>http://127.0.0.1:8787</code>。
     </div>
-    <div class="side-note">
+    <div class="side-note" data-i18n-html="卡以 JSON 存在 <code>workbench/data/cards/</code>；提交时只把这一张卡写成 <code>runs/*.md</code> 并单独提交，不会带上工作区其他改动。">
       卡以 JSON 存在 <code>workbench/data/cards/</code>；提交时只把这一张卡写成
       <code>runs/*.md</code> 并单独提交，不会带上工作区其他改动。
     </div>
@@ -209,10 +210,10 @@
   <section class="editor" id="editor"></section>
 
   <aside class="gates">
-    <div class="gates-head"><span>门禁检查</span><span class="score" id="gateScore">— / 8</span></div>
+    <div class="gates-head"><span data-i18n="门禁检查">门禁检查</span><span class="score" id="gateScore">— / 8</span></div>
     <div id="gateList"></div>
     <div class="counts" id="counts"></div>
-    <div class="side-note">
+    <div class="side-note" data-i18n-html="门禁在服务端强制：未通过时无法保存为「已授权」，也无法提交。工作台只做编辑与校验，不产生证据。">
       门禁在服务端强制：未通过时无法保存为「已授权」，也无法提交。
       工作台只做编辑与校验，不产生证据。
     </div>
@@ -237,7 +238,203 @@
     saveState: document.getElementById("saveState")
   };
 
-  /* ---------- 通用 ---------- */
+  /* ---------- i18n ---------- */
+  var LANG = (function () {
+    try {
+      var saved = localStorage.getItem("wb.lang");
+      if (saved === "zh" || saved === "en") return saved;
+    } catch (e) {}
+    return (navigator.language || "").toLowerCase().indexOf("zh") === 0 ? "zh" : "en";
+  })();
+  var EN = {
+    "变更卡工作台": "Change Card Workbench",
+    "前后端联动 · 读写仓库": "Full-stack · reads and writes the repository",
+    "新建卡": "New card",
+    "记录基线": "Record baseline",
+    "提交卡到 runs/": "Commit card to runs/",
+    "预览 markdown": "Preview markdown",
+    "删除卡": "Delete card",
+    "导入 JSON": "Import JSON",
+    "导出 JSON": "Export JSON",
+    "卡列表": "Cards",
+    "门禁检查": "Gate checks",
+    "分支": "Branch",
+    "工作区": "Worktree",
+    "干净": "clean",
+    "连接中…": "Connecting…",
+    "仓库可用": "Repository ready",
+    "工作区有未提交改动": "Uncommitted changes",
+    "无法连接后端": "Cannot reach backend",
+    "保存中…": "Saving…",
+    "已保存": "Saved",
+    "保存被拒": "Save rejected",
+    "提交中…": "Committing…",
+    "已提交": "Committed",
+    "提交被拒": "Commit rejected",
+    "尚未提交到仓库。填完并通过门禁后点「提交卡到 runs/」；只提交这一张卡，不会带上工作区其他改动。": "Not yet committed. Fill the card and pass the gates, then click \"Commit card to runs/\". Only this card is committed.",
+    "已提交：": "Committed: ",
+    "卡提交": "card commit",
+    "不想用命令行：双击 <code>start.bat</code>；或在本目录执行 <code>node server.js</code>，然后打开 <code>http://127.0.0.1:8787</code>。": "No terminal? Double-click <code>start.bat</code>, or run <code>node server.js</code> in this folder and open <code>http://127.0.0.1:8787</code>.",
+    "卡以 JSON 存在 <code>workbench/data/cards/</code>；提交时只把这一张卡写成 <code>runs/*.md</code> 并单独提交，不会带上工作区其他改动。": "Cards are stored as JSON in <code>workbench/data/cards/</code>. Committing writes only this card to <code>runs/*.md</code> and commits that file alone.",
+    "门禁在服务端强制：未通过时无法保存为「已授权」，也无法提交。工作台只做编辑与校验，不产生证据。": "Gates are enforced server-side: a failing card cannot be saved as \"authorized\" and cannot be committed. The workbench edits and validates; it does not produce evidence.",
+    "卡头": "Card header",
+    "影响面": "Impact",
+    "可逆性与 git 基线": "Reversibility and git baseline",
+    "决策权 owner": "Decision owner",
+    "执行者与授权包": "Executor and authority envelope",
+    "输入集合登记": "Input-set registration",
+    "控制命题": "Control propositions",
+    "业务命题（与控制命题分表）": "Business propositions (separate table)",
+    "证据包封面（EPC）": "Evidence package cover (EPC)",
+    "判定记录": "Judgment record",
+    "残余风险接受（owner 签署）": "Residual-risk acceptance (owner signs)",
+    "卡 ID": "Card ID",
+    "卡版本": "Card version",
+    "变更标题（一句话结果）": "Change title (one-line outcome)",
+    "变更类别": "Change class",
+    "环境": "Environment",
+    "时间窗": "Time window",
+    "填写人": "Author",
+    "卡状态": "Card status",
+    "输出文件名（runs/ 下的 slug）": "Output filename (slug under runs/)",
+    "依据的登记表 / ADR": "Basis (registry / ADR)",
+    "为什么是后果性": "Why consequential",
+    "不纳入的相邻变更": "Adjacent changes excluded",
+    "受影响对象": "Affected objects",
+    "爆炸半径": "Blast radius",
+    "检测延迟": "Detection latency",
+    "不可逆点": "Point of no return",
+    "关键事实与权威来源": "Key facts and authoritative sources",
+    "明确不声称的影响面": "Explicitly not claimed",
+    "可逆等级": "Reversibility level",
+    "回滚执行人 / 复核人": "Rollback executor / reviewer",
+    "回滚动作": "Rollback action",
+    "回滚路径的证据来源": "Evidence source for the rollback path",
+    "回滚验证命题": "Rollback verification proposition",
+    "使用 git 作为证据来源": "Use git as the evidence source",
+    "变更前 status 为空": "Pre-change status is clean",
+    "变更后 status 为空": "Post-change status is clean",
+    "owner（姓名 / 账号）": "Owner (name / account)",
+    "第二方": "Second party",
+    "为什么是这个角色": "Why this role",
+    "明确不授予": "Explicitly not granted",
+    "owner 缺席时": "When the owner is absent",
+    "执行者（人 / agent）": "Executor (human / agent)",
+    "授权范围": "Scope",
+    "有效期 / 触发失效条件": "Validity / invalidation trigger",
+    "额度或频次上限": "Quota or frequency cap",
+    "审计记录位置": "Audit record location",
+    "撤销人": "Revoker",
+    "回滚路径与验证方式": "Rollback path and verification",
+    "决策权 owner（指名到人）": "Decision owner (named person)",
+    "依赖的输入集合已登记（路径 / 清单 / 命名 / 解析 / 语义）": "Required input sets are registered (path / list / naming / parsing / semantics)",
+    "未登记的假设（单列）": "Unregistered assumptions (listed separately)",
+    "假设清单（A-1 …）": "Assumption list (A-1 …)",
+    "命题（合取项逐项编号）": "Proposition (conjuncts numbered)",
+    "证据字段 / 登记位置": "Evidence field / registration location",
+    "采集人": "Collector",
+    "判定人（≠产出者）": "Judge (≠ producer)",
+    "状态（五值）": "Status (five values)",
+    "闭合（三值）": "Closure (three values)",
+    "删除": "Delete",
+    "业务状态": "Business status",
+    "业务命题（owner 要决定的业务结果）": "Business proposition (outcome the owner decides)",
+    "映射控制命题": "Mapped control propositions",
+    "导出时间": "Export time",
+    "判定人": "Judge",
+    "导出对象 ID": "Exported object ID",
+    "文件 SHA-256 / blob_sha": "File SHA-256 / blob_sha",
+    "核对时间": "Check time",
+    "核对结论": "Check conclusion",
+    "判定时间": "Judgment time",
+    "判定结论": "Judgment conclusion",
+    "未闭合项（ID + 缺口）": "Unclosed items (ID + gap)",
+    "不可接受项（不得由本条覆盖）": "Unacceptable items (not covered by this acceptance)",
+    "业务影响": "Business impact",
+    "为什么必须现在做 / 推迟的代价": "Why now / cost of delay",
+    "补偿控制": "Compensating controls",
+    "接受范围": "Acceptance scope",
+    "有效期 / 复审点": "Validity / review point",
+    "接受人（姓名 + 账号）": "Acceptor (name + account)",
+    "接受时间": "Acceptance time",
+    "撤销条件": "Revocation conditions",
+    "＋ 新增控制命题": "+ Add control proposition",
+    "至少保留一条控制命题": "Keep at least one control proposition",
+    "从仓库提交里选 change_commit…": "Select change_commit from repository commits…",
+    "刷新提交列表": "Refresh commit list",
+    "查看 base..change diff": "View base..change diff",
+    "草稿": "Draft",
+    "待 owner 批准": "Awaiting owner approval",
+    "已授权": "Authorized",
+    "执行中": "Executing",
+    "待验收": "Awaiting acceptance",
+    "已验收": "Accepted",
+    "已回滚": "Rolled back",
+    "已拒绝": "Rejected",
+    "已失效": "Invalidated",
+    "已登记可达": "Declared reachable",
+    "假设可达": "Assumed reachable",
+    "待核": "To verify",
+    "缺失": "Missing",
+    "未成立": "Not established",
+    "闭合": "Closed",
+    "条件闭合": "Conditionally closed",
+    "未闭合": "Unclosed",
+    "可轻易回滚": "Easily reversible",
+    "可回滚但有用户影响": "Reversible with user impact",
+    "部分不可逆": "Partially irreversible",
+    "不可逆": "Irreversible",
+    "D-1 导航契约修正": "D-1 Navigation contract fix",
+    "D-2 判断资产变更": "D-2 Judgment-asset change",
+    "C-1 常规发布": "C-1 Routine release",
+    "C-2 数据迁移": "C-2 Data migration",
+    "C-3 权限调整": "C-3 Permission change",
+    "C-4 外部依赖升级": "C-4 External dependency upgrade",
+    "C-5 客户可见文案": "C-5 Customer-visible copy",
+    "C-6 紧急修复": "C-6 Emergency fix",
+    "变更类别与后果性理由": "Change class and consequential reason",
+    "owner 指名到人": "Owner named to a person",
+    "授权包六项齐全": "All six envelope items present",
+    "回滚路径有证据来源": "Rollback path has an evidence source",
+    "控制命题六字段齐全": "All six control-proposition fields present",
+    "输入集合已登记": "Input sets registered",
+    "业务未闭合时已签署残余风险": "Residual risk signed when business is open",
+    "git 前置检查（若使用）": "Git pre-check (if used)",
+    "类别已选 + 写明为什么是后果性": "Class selected + consequential reason stated",
+    "必须是具体人，不是角色占位": "Must be a specific person, not a role placeholder",
+    "范围 / 时限 / 额度 / 审计 / 撤销人 / 回滚路径": "Scope / time / quota / audit / revoker / rollback",
+    "系统字段 + 登记位置": "System field + registration location",
+    "命题 / 证据 / 采集人 / 判定人 / 状态 / 闭合": "Proposition / evidence / collector / judge / status / closure",
+    "路径 / 清单 / 命名 / 解析 / 语义": "Path / list / naming / parsing / semantics",
+    "业务命题闭合，或 owner 已签署": "Business proposition closed, or owner has signed",
+    "base_commit + 前/后 status 为空 + change_commit": "base_commit + clean pre/post status + change_commit",
+    "未使用 git": "Git not used",
+    "门禁 4 / 8": "Gates 4 / 8",
+    "六项缺一视为未授权": "Six items; missing one means unauthorized",
+    "状态五值 + 闭合三值": "Five statuses + three closure values",
+    "登记层，不是导出审计": "Register layer, not an export audit",
+    "空白 = 未接受": "Blank = not accepted"
+  };
+  function t(s) { return LANG === "en" ? (EN[s] || s) : s; }
+  function tr(zh, en) { return LANG === "en" ? en : zh; }
+  function setLang(l) {
+    try { localStorage.setItem("wb.lang", l); } catch (e) {}
+    location.reload();
+  }
+  function applyChrome() {
+    document.documentElement.lang = LANG === "zh" ? "zh-CN" : "en";
+    document.title = LANG === "en" ? "Change Card Workbench · AI-Native Organization Design" : "变更卡工作台 · AI 原生组织设计";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i18n]"), function (el) {
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-html]"), function (el) {
+      el.innerHTML = t(el.getAttribute("data-i18n-html"));
+    });
+    var b = document.getElementById("btnLang");
+    if (b) b.textContent = LANG === "en" ? "中文" : "EN";
+  }
+
+
   function p2(n) { return String(n).padStart(2, "0"); }
   function nowISO() {
     var d = new Date(), tz = -d.getTimezoneOffset(), s = tz >= 0 ? "+" : "-";
@@ -329,7 +526,7 @@
   function queueSave() {
     var c = cur();
     if (!c) return;
-    el.saveState.textContent = "保存中…";
+    el.saveState.textContent = t("保存中…");
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       if (saving) { queueSave(); return; }
@@ -339,14 +536,14 @@
         .then(function (res) {
           var i = cards.map(function (x) { return x.id; }).indexOf(c.id);
           if (i >= 0 && res.card) cards[i] = res.card;
-          el.saveState.textContent = "已保存 " + nowISO().slice(11, 19);
+          el.saveState.textContent = t("已保存") + " " + nowISO().slice(11, 19);
           renderList();
         })
         .catch(function (e) {
           var i = cards.map(function (x) { return x.id; }).indexOf(c.id);
           if (i >= 0) cards[i] = snapshot[i];
-          el.saveState.textContent = "保存被拒";
-          toast("服务端拒绝保存：" + e.message, true);
+          el.saveState.textContent = t("保存被拒");
+          toast(tr("服务端拒绝保存：", "Server rejected save: ") + e.message, true);
           renderEditor();
         })
         .then(function () { saving = false; });
@@ -357,13 +554,13 @@
   function renderList() {
     el.cardCount.textContent = String(cards.length);
     if (!cards.length) {
-      el.cardList.innerHTML = '<div class="side-note">还没有卡。点「新建卡」。</div>';
+      el.cardList.innerHTML = '<div class="side-note">' + tr("还没有卡。点「新建卡」。", "No cards yet. Click \"New card\".") + '</div>';
       return;
     }
     el.cardList.innerHTML = cards.map(function (c) {
       return '<div class="carditem' + (c.id === currentId ? " active" : "") + '" data-id="' + esc(c.id) + '">' +
-        '<span class="t">' + (esc(c.title) || "（未命名变更）") + '</span>' +
-        '<span class="m"><span>' + esc(c.id) + '</span><span>' + esc(c.status) + '</span></span></div>';
+        '<span class="t">' + (esc(c.title) || (LANG === "en" ? "(untitled change)" : "（未命名变更）")) + '</span>' +
+        '<span class="m"><span>' + esc(c.id) + '</span><span>' + esc(t(c.status)) + '</span></span></div>';
     }).join("");
     Array.prototype.forEach.call(el.cardList.querySelectorAll("[data-id]"), function (d) {
       d.addEventListener("click", function () {
@@ -377,36 +574,38 @@
   function field(label, p, opts) {
     opts = opts || {};
     var v = getPath(cur(), p);
-    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + label + '</span>' +
+    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + t(label) + '</span>' +
       '<input data-path="' + p + '" value="' + esc(v == null ? "" : v) + '" placeholder="' + esc(opts.ph || "") + '"></label>';
   }
   function area(label, p, rows, opts) {
     opts = opts || {};
     var v = getPath(cur(), p);
-    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + label + '</span>' +
+    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + t(label) + '</span>' +
       '<textarea data-path="' + p + '" rows="' + (rows || 3) + '" placeholder="' + esc(opts.ph || "") + '">' + esc(v == null ? "" : v) + '</textarea></label>';
   }
   function sel(label, p, options, opts) {
     opts = opts || {};
     var v = getPath(cur(), p);
-    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + label + '</span><select data-path="' + p + '">' +
+    return '<label class="f ' + (opts.wide ? "wide" : "") + '"><span>' + t(label) + '</span><select data-path="' + p + '">' +
       options.map(function (o) {
-        var val = typeof o === "string" ? o : o.v, txt = typeof o === "string" ? o : o.t;
+        var val = typeof o === "string" ? o : o.v;
+        var txt = typeof o === "string" ? t(o) : o.t;
         return '<option value="' + esc(val) + '"' + (val === v ? " selected" : "") + '>' + esc(txt) + '</option>';
       }).join("") + '</select></label>';
   }
   function chk(label, p) {
-    return '<label class="check"><input type="checkbox" data-path="' + p + '"' + (getPath(cur(), p) ? " checked" : "") + '><span>' + label + '</span></label>';
+    return '<label class="check"><input type="checkbox" data-path="' + p + '"' + (getPath(cur(), p) ? " checked" : "") + '><span>' + t(label) + '</span></label>';
   }
-  function sec(n, t, hint) {
-    return '<div class="sec"><div class="sec-h"><span class="n">' + n + '</span><h2>' + t + '</h2>' + (hint ? '<span class="hint">' + hint + '</span>' : "") + '</div>';
+  function sec(n, title, hint) {
+    return '<div class="sec"><div class="sec-h"><span class="n">' + n + '</span><h2>' + t(title) + '</h2>' + (hint ? '<span class="hint">' + t(hint) + '</span>' : "") + '</div>';
   }
   function secEnd() { return "</div>"; }
 
   function renderEditor() {
     var c = cur();
     if (!c) {
-      el.editor.innerHTML = '<div class="empty">没有选中的卡。<br><br><button class="btn primary" id="emptyNew">新建一张</button></div>';
+      el.editor.innerHTML = '<div class="empty">' + (LANG === "en" ? "No card selected.<br><br>" : "没有选中的卡。<br><br>") +
+        '<button class="btn primary" id="emptyNew">' + (LANG === "en" ? "New card" : "新建一张") + '</button></div>';
       var b = document.getElementById("emptyNew");
       if (b) b.addEventListener("click", newCard);
       return;
@@ -416,30 +615,30 @@
       return '<div class="ctrl">' +
         '<div class="ctrl-top">' +
         '<label class="f"><span>ID</span><input data-path="controls.' + i + '.id" value="' + esc(x.id) + '"></label>' +
-        '<label class="f"><span>命题（合取项逐项编号）</span><input data-path="controls.' + i + '.proposition" value="' + esc(x.proposition) + '"></label>' +
-        '<label class="f"><span>证据字段 / 登记位置</span><input data-path="controls.' + i + '.evidence" value="' + esc(x.evidence) + '"></label>' +
+        '<label class="f"><span>' + t("命题（合取项逐项编号）") + '</span><input data-path="controls.' + i + '.proposition" value="' + esc(x.proposition) + '"></label>' +
+        '<label class="f"><span>' + t("证据字段 / 登记位置") + '</span><input data-path="controls.' + i + '.evidence" value="' + esc(x.evidence) + '"></label>' +
         '</div><div class="ctrl-bottom">' +
-        '<label class="f"><span>采集人</span><input data-path="controls.' + i + '.collector" value="' + esc(x.collector) + '"></label>' +
-        '<label class="f"><span>判定人（≠产出者）</span><input data-path="controls.' + i + '.judge" value="' + esc(x.judge) + '"></label>' +
-        '<label class="f"><span>状态（五值）</span><select data-path="controls.' + i + '.status">' +
-        ["已登记可达", "假设可达", "待核", "缺失", "未成立"].map(function (s) { return '<option' + (s === x.status ? " selected" : "") + '>' + s + '</option>'; }).join("") +
+        '<label class="f"><span>' + t("采集人") + '</span><input data-path="controls.' + i + '.collector" value="' + esc(x.collector) + '"></label>' +
+        '<label class="f"><span>' + t("判定人（≠产出者）") + '</span><input data-path="controls.' + i + '.judge" value="' + esc(x.judge) + '"></label>' +
+        '<label class="f"><span>' + t("状态（五值）") + '</span><select data-path="controls.' + i + '.status">' +
+        ["已登记可达", "假设可达", "待核", "缺失", "未成立"].map(function (s) { return '<option value="' + s + '"' + (s === x.status ? " selected" : "") + '>' + esc(t(s)) + '</option>'; }).join("") +
         '</select></label>' +
-        '<label class="f"><span>闭合（三值）</span><select data-path="controls.' + i + '.closure">' +
-        ["闭合", "条件闭合", "未闭合"].map(function (s) { return '<option' + (s === x.closure ? " selected" : "") + '>' + s + '</option>'; }).join("") +
+        '<label class="f"><span>' + t("闭合（三值）") + '</span><select data-path="controls.' + i + '.closure">' +
+        ["闭合", "条件闭合", "未闭合"].map(function (s) { return '<option value="' + s + '"' + (s === x.closure ? " selected" : "") + '>' + esc(t(s)) + '</option>'; }).join("") +
         '</select></label>' +
-        '<button class="ctrl-del" data-action="delControl" data-index="' + i + '">删除</button>' +
+        '<button class="ctrl-del" data-action="delControl" data-index="' + i + '">' + t("删除") + '</button>' +
         '</div></div>';
     }).join("");
 
     el.editor.innerHTML =
       '<div class="editor-head"><div>' +
       '<span class="mono">' + esc(c.id) + ' · ' + esc(c.updatedAt || "") + '</span>' +
-      '<h1 id="edTitle">' + (esc(c.title) || "（未命名变更）") + '</h1></div>' +
-      '<span class="badge" id="edBadge">' + esc(c.status) + '</span></div>' +
+      '<h1 id="edTitle">' + (esc(c.title) || (LANG === "en" ? "(untitled change)" : "（未命名变更）")) + '</h1></div>' +
+      '<span class="badge" id="edBadge">' + esc(t(c.status)) + '</span></div>' +
 
       (ext.exportedPath
-        ? '<div class="okline">已提交：<code>' + esc(ext.exportedPath) + '</code> · 卡提交 <span class="sha">' + esc(String(ext.cardCommit || "").slice(0, 7)) + '</span> · ' + esc(ext.committedAt || "") + '</div>'
-        : '<div class="warn">尚未提交到仓库。填完并通过门禁后点「提交卡到 runs/」；只提交这一张卡，不会带上工作区其他改动。</div>') +
+        ? '<div class="okline">' + t("已提交：") + '<code>' + esc(ext.exportedPath) + '</code> · ' + t("卡提交") + ' <span class="sha">' + esc(String(ext.cardCommit || "").slice(0, 7)) + '</span> · ' + esc(ext.committedAt || "") + '</div>'
+        : '<div class="warn">' + t("尚未提交到仓库。填完并通过门禁后点「提交卡到 runs/」；只提交这一张卡，不会带上工作区其他改动。") + '</div>') +
 
       sec("01", "卡头") +
       '<div class="grid">' + field("卡 ID", "id") + field("卡版本", "version") +
@@ -470,13 +669,13 @@
       '<div class="gitbox" style="margin-top:.6rem">' +
       '<div class="row">' + chk("使用 git 作为证据来源", "rollback.usesGit") + chk("变更前 status 为空", "rollback.preStatusClean") + chk("变更后 status 为空", "rollback.postStatusClean") + '</div>' +
       '<div class="row">' +
-      '<label class="f" style="flex:1;min-width:180px"><span>base_commit</span><input data-path="rollback.baseCommit" value="' + esc(c.rollback.baseCommit) + '" placeholder="点「记录基线」自动填入"></label>' +
-      '<label class="f" style="flex:1;min-width:180px"><span>change_commit</span><input data-path="rollback.changeCommit" value="' + esc(c.rollback.changeCommit) + '" placeholder="从提交列表选，或手填"></label>' +
-      '<label class="f" style="width:110px"><span>分支</span><input data-path="rollback.branch" value="' + esc(c.rollback.branch || "main") + '"></label>' +
+      '<label class="f" style="flex:1;min-width:180px"><span>base_commit</span><input data-path="rollback.baseCommit" value="' + esc(c.rollback.baseCommit) + '" placeholder="' + (LANG === "en" ? "filled by \"Record baseline\"" : "点「记录基线」自动填入") + '"></label>' +
+      '<label class="f" style="flex:1;min-width:180px"><span>change_commit</span><input data-path="rollback.changeCommit" value="' + esc(c.rollback.changeCommit) + '" placeholder="' + (LANG === "en" ? "pick from the commit list or type it" : "从提交列表选，或手填") + '"></label>' +
+      '<label class="f" style="width:110px"><span>' + t("分支") + '</span><input data-path="rollback.branch" value="' + esc(c.rollback.branch || "main") + '"></label>' +
       '</div>' +
-      '<div class="row"><select id="logPick"><option value="">从仓库提交里选 change_commit…</option></select>' +
-      '<button class="btn" id="btnLoadLog">刷新提交列表</button>' +
-      '<button class="btn" id="btnDiff">查看 base..change diff</button></div>' +
+      '<div class="row"><select id="logPick"><option value="">' + t("从仓库提交里选 change_commit…") + '</option></select>' +
+      '<button class="btn" id="btnLoadLog">' + t("刷新提交列表") + '</button>' +
+      '<button class="btn" id="btnDiff">' + t("查看 base..change diff") + '</button></div>' +
       '<div id="diffOut"></div>' +
       '</div>' + secEnd() +
 
@@ -566,7 +765,7 @@
           queueSave(); renderEditor();
         }
         if (a === "delControl") {
-          if (c.controls.length <= 1) { toast("至少保留一条控制命题"); return; }
+          if (c.controls.length <= 1) { toast(tr("至少保留一条控制命题", "Keep at least one control proposition")); return; }
           c.controls.splice(parseInt(btn.getAttribute("data-index"), 10), 1);
           queueSave(); renderEditor();
         }
@@ -584,7 +783,7 @@
         var chkPost = el.editor.querySelector('[data-path="rollback.postStatusClean"]');
         if (chkPost) chkPost.checked = repoClean;
         refreshGates(); queueSave();
-        toast("已填入 change_commit；变更后 status 为空 = " + (repoClean ? "是" : "否"));
+        toast(tr("已填入 change_commit；变更后 status 为空 = ", "Filled change_commit; post-change status clean = ") + (repoClean ? tr("是", "yes") : tr("否", "no")));
       });
     }
     var bl = document.getElementById("btnLoadLog");
@@ -600,14 +799,14 @@
       if (gs.some(function (g) { return !g.pass && !g.na; })) {
         inp.value = inp.dataset.prev || "草稿"; c.status = inp.value;
         updateBadge(); refreshGates();
-        toast("门禁未全部通过：不能进入「" + val + "」。", true);
+        toast(tr("门禁未全部通过：不能进入「", "Gates not all passed: cannot move to \"") + t(val) + tr("」。", "\"."), true);
         return false;
       }
     }
     if (p === "status" && val === "已验收" && c.business.status !== "闭合") {
       inp.value = inp.dataset.prev || "待验收"; c.status = inp.value;
       updateBadge(); refreshGates();
-      toast("业务命题未闭合：不能标「已验收」。", true);
+      toast(tr("业务命题未闭合：不能标「已验收」。", "Business proposition is open: cannot mark \"Accepted\"."), true);
       return false;
     }
     if (p.indexOf("controls.") === 0 && p.indexOf(".status") > 0 && val === "已登记可达") {
@@ -615,7 +814,7 @@
       if (!canRegistered(c, ctrl)) {
         inp.value = inp.dataset.prev || "待核"; ctrl.status = inp.value;
         refreshGates();
-        toast("未满足 ADR-015 五项条件：不能标「已登记可达」。", true);
+        toast(tr("未满足 ADR-015 五项条件：不能标「已登记可达」。", "ADR-015 five conditions are not met: cannot mark \"Declared reachable\"."), true);
         return false;
       }
     }
@@ -625,7 +824,7 @@
   function updateBadge() {
     var c = cur(), b = document.getElementById("edBadge");
     if (!c || !b) return;
-    b.textContent = c.status;
+    b.textContent = t(c.status);
     b.className = "badge" + (c.status === "已验收" ? " ready" : "");
   }
 
@@ -636,16 +835,16 @@
     el.gateScore.textContent = gs.filter(function (g) { return g.pass || g.na; }).length + " / 8";
     el.gateList.innerHTML = gs.map(function (g) {
       return '<div class="gate ' + (g.pass ? "ok" : (g.na ? "na" : "fail")) + '"><span class="gdot"></span><div>' +
-        '<div class="gl">' + g.id + ". " + g.label + '</div><div class="gd">' + g.detail + '</div></div></div>';
+        '<div class="gl">' + g.id + ". " + esc(t(g.label)) + '</div><div class="gd">' + esc(t(g.detail)) + '</div></div></div>';
     }).join("");
     var ct = counts(c);
     el.counts.innerHTML =
-      '<div class="cnt a2"><b>' + ct.reg + '</b>已登记可达</div><div class="cnt"><b>' + ct.asm + '</b>假设可达</div>' +
-      '<div class="cnt a2"><b>' + ct.cl + '</b>闭合</div><div class="cnt"><b>' + ct.cond + '</b>条件闭合</div>' +
-      '<div class="cnt a1"><b>' + ct.open + '</b>未闭合</div><div class="cnt"><b>' + ct.total + '</b>控制命题</div>';
+      '<div class="cnt a2"><b>' + ct.reg + '</b>' + t("已登记可达") + '</div><div class="cnt"><b>' + ct.asm + '</b>' + t("假设可达") + '</div>' +
+      '<div class="cnt a2"><b>' + ct.cl + '</b>' + t("闭合") + '</div><div class="cnt"><b>' + ct.cond + '</b>' + t("条件闭合") + '</div>' +
+      '<div class="cnt a1"><b>' + ct.open + '</b>' + t("未闭合") + '</div><div class="cnt"><b>' + ct.total + '</b>' + t("控制命题") + '</div>';
   }
 
-  function renderAll() { renderList(); renderEditor(); refreshGates(); }
+  function renderAll() { renderList(); renderEditor(); refreshGates(); applyChrome(); }
 
   /* ---------- 仓库状态 ---------- */
   var repoClean = true;
@@ -653,15 +852,15 @@
     return api("GET", "/api/repo/status").then(function (s) {
       repoClean = s.clean;
       document.getElementById("repoDot").className = "dot " + (s.clean ? "ok" : "dirty");
-      document.getElementById("repoState").textContent = s.clean ? "仓库可用" : "工作区有未提交改动";
+      document.getElementById("repoState").textContent = s.clean ? t("仓库可用") : t("工作区有未提交改动");
       document.getElementById("repoBranch").textContent = s.branch;
       document.getElementById("repoHead").textContent = s.short;
-      document.getElementById("repoClean").textContent = s.clean ? "干净" : (s.porcelain.length + " 项改动");
+      document.getElementById("repoClean").textContent = s.clean ? t("干净") : (s.porcelain.length + (LANG === "en" ? " changes" : " 项改动"));
       document.getElementById("repoState").title = s.last || "";
     }).catch(function (e) {
       document.getElementById("repoDot").className = "dot dirty";
-      document.getElementById("repoState").textContent = "无法连接后端";
-      toast("后端未启动：" + e.message, true);
+      document.getElementById("repoState").textContent = t("无法连接后端");
+      toast((LANG === "en" ? "Backend not running: " : "后端未启动：") + e.message, true);
     });
   }
 
@@ -669,24 +868,24 @@
     return api("GET", "/api/repo/log?n=20").then(function (r) {
       var pick = document.getElementById("logPick");
       if (!pick) return;
-      pick.innerHTML = '<option value="">从仓库提交里选 change_commit…</option>' +
+      pick.innerHTML = '<option value="">' + t("从仓库提交里选 change_commit…") + '</option>' +
         r.commits.map(function (c) {
           return '<option value="' + esc(c.sha) + '">' + esc(c.short) + " · " + esc(c.date.slice(0, 19)) + " · " + esc(c.subject.slice(0, 48)) + '</option>';
         }).join("");
-      toast("已载入 " + r.commits.length + " 条提交");
-    }).catch(function (e) { toast("读取提交失败：" + e.message, true); });
+      toast(tr("已载入 ", "Loaded ") + r.commits.length + tr(" 条提交", " commits"));
+    }).catch(function (e) { toast(tr("读取提交失败：", "Failed to load commits: ") + e.message, true); });
   }
 
   function showDiff() {
     var c = cur();
     var out = document.getElementById("diffOut");
-    if (!c.rollback.baseCommit || !c.rollback.changeCommit) { toast("需要先填 base_commit 与 change_commit", true); return; }
-    out.innerHTML = '<div class="saving">读取中…</div>';
+    if (!c.rollback.baseCommit || !c.rollback.changeCommit) { toast(tr("需要先填 base_commit 与 change_commit", "Fill base_commit and change_commit first"), true); return; }
+    out.innerHTML = '<div class="saving">' + tr("读取中…", "Loading…") + '</div>';
     api("GET", "/api/repo/diff?base=" + encodeURIComponent(c.rollback.baseCommit) + "&change=" + encodeURIComponent(c.rollback.changeCommit))
       .then(function (d) {
-        out.innerHTML = '<div class="saving">' + esc(d.range) + ' · 涉及 ' + d.files.length + ' 个文件</div>' +
+        out.innerHTML = '<div class="saving">' + esc(d.range) + ' · ' + tr("涉及 ", "Files: ") + d.files.length + tr(" 个文件", "") + '</div>' +
           '<pre style="font-family:var(--mono);font-size:.7rem;max-height:260px;overflow:auto;border:1px solid var(--rule);padding:.5rem;background:var(--bg);white-space:pre-wrap">' +
-          esc(d.stat || "(无 stat)") + '\n' + esc(d.patch.slice(0, 6000)) + '</pre>';
+          esc(d.stat || tr("(无 stat)", "(no stat)")) + '\n' + esc(d.patch.slice(0, 6000)) + '</pre>';
       })
       .catch(function (e) { out.innerHTML = '<div class="warn">' + esc(e.message) + '</div>'; });
   }
@@ -698,13 +897,13 @@
       currentId = r.card.id;
       renderAll();
       refreshRepo();
-      toast("已新建 " + r.card.id);
-    }).catch(function (e) { toast("新建失败：" + e.message, true); });
+      toast(tr("已新建 ", "Created ") + r.card.id);
+    }).catch(function (e) { toast(tr("新建失败：", "Create failed: ") + e.message, true); });
   }
 
   function doBaseline() {
     var c = cur();
-    if (!c) { toast("先选一张卡"); return; }
+    if (!c) { toast(tr("先选一张卡", "Select a card first")); return; }
     api("POST", "/api/cards/" + encodeURIComponent(c.id) + "/baseline").then(function (b) {
       c.rollback.baseCommit = b.baseCommit;
       c.rollback.preStatusClean = b.clean;
@@ -712,28 +911,28 @@
       renderEditor();
       refreshGates(); refreshRepo(); queueSave();
       if (b.clean) {
-        toast("基线已记录：" + b.baseCommit.slice(0, 7) + "（工作区干净）");
+        toast(tr("基线已记录：", "Baseline recorded: ") + b.baseCommit.slice(0, 7) + tr("（工作区干净）", " (worktree clean)"));
       } else {
-        toast("工作区不干净（" + b.porcelain.length + " 项改动）：base_commit 已记录，但门禁 8 不会通过。", true);
+        toast(tr("工作区不干净（", "Worktree is not clean (") + b.porcelain.length + tr(" 项改动）：base_commit 已记录，但门禁 8 不会通过。", " changes): base_commit is recorded, but gate 8 will not pass."), true);
       }
-    }).catch(function (e) { toast("记录基线失败：" + e.message, true); });
+    }).catch(function (e) { toast(tr("记录基线失败：", "Failed to record baseline: ") + e.message, true); });
   }
 
   function doCommit() {
     var c = cur();
-    if (!c) { toast("先选一张卡"); return; }
-    el.saveState.textContent = "提交中…";
+    if (!c) { toast(tr("先选一张卡", "Select a card first")); return; }
+    el.saveState.textContent = t("提交中…");
     api("PUT", "/api/cards/" + encodeURIComponent(c.id), c)
       .then(function () { return api("POST", "/api/cards/" + encodeURIComponent(c.id) + "/commit"); })
       .then(function (r) {
         c.external = { exportedPath: r.file, cardCommit: r.commit, committedAt: nowISO() };
-        el.saveState.textContent = "已提交 " + r.short;
+        el.saveState.textContent = t("已提交") + " " + r.short;
         renderEditor(); refreshRepo();
-        toast("已提交：" + r.file + " · " + r.short);
+        toast(tr("已提交：", "Committed: ") + r.file + " · " + r.short);
       })
       .catch(function (e) {
-        el.saveState.textContent = "提交被拒";
-        toast("提交被拒：" + e.message, true);
+        el.saveState.textContent = t("提交被拒");
+        toast(tr("提交被拒：", "Commit rejected: ") + e.message, true);
       });
   }
 
@@ -744,7 +943,7 @@
       .then(function () { return api("GET", "/api/cards/" + encodeURIComponent(c.id) + "/markdown"); })
       .then(function (md) {
         var w = window.open("", "_blank");
-        if (!w) { toast("浏览器拦截了弹窗", true); return; }
+        if (!w) { toast(tr("浏览器拦截了弹窗", "The browser blocked the popup"), true); return; }
         w.document.write('<meta charset="utf-8"><title>' + esc(c.id) + '</title><pre style="font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.7;padding:24px;white-space:pre-wrap">' + esc(md) + '</pre>');
         w.document.close();
       })
@@ -753,14 +952,14 @@
 
   function delCard() {
     var c = cur();
-    if (!c) { toast("先选一张卡"); return; }
-    if (!confirm("删除卡 " + c.id + "？该操作只删除 workbench/data/cards 下的 JSON，不影响已提交的 runs/*.md。")) return;
+    if (!c) { toast(tr("先选一张卡", "Select a card first")); return; }
+    if (!confirm(tr("删除卡 ", "Delete card ") + c.id + tr("？该操作只删除 workbench/data/cards 下的 JSON，不影响已提交的 runs/*.md。", "? This only deletes the JSON under workbench/data/cards; committed runs/*.md files are untouched."))) return;
     api("DELETE", "/api/cards/" + encodeURIComponent(c.id)).then(function () {
       cards = cards.filter(function (x) { return x.id !== c.id; });
       currentId = cards.length ? cards[0].id : null;
       renderAll(); refreshRepo();
-      toast("已删除 " + c.id);
-    }).catch(function (e) { toast("删除失败：" + e.message, true); });
+      toast(tr("已删除 ", "Deleted ") + c.id);
+    }).catch(function (e) { toast(tr("删除失败：", "Delete failed: ") + e.message, true); });
   }
 
   function exportJson() {
@@ -771,17 +970,17 @@
       a.download = "workbench-cards.json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1200);
-      toast("已导出 " + data.cards.length + " 张卡");
-    }).catch(function (e) { toast("导出失败：" + e.message, true); });
+      toast(tr("已导出 ", "Exported ") + data.cards.length + tr(" 张卡", " cards"));
+    }).catch(function (e) { toast(tr("导出失败：", "Export failed: ") + e.message, true); });
   }
 
   function importJson(file) {
     var r = new FileReader();
     r.onload = function () {
       var data;
-      try { data = JSON.parse(r.result); } catch (e) { toast("导入失败：JSON 格式不正确", true); return; }
+      try { data = JSON.parse(r.result); } catch (e) { toast(tr("导入失败：JSON 格式不正确", "Import failed: invalid JSON"), true); return; }
       var arr = Array.isArray(data) ? data : (data.cards || []);
-      if (!Array.isArray(arr) || !arr.length) { toast("导入失败：没有 cards 数组", true); return; }
+      if (!Array.isArray(arr) || !arr.length) { toast(tr("导入失败：没有 cards 数组", "Import failed: no cards array"), true); return; }
       api("POST", "/api/cards/import", { cards: arr }).then(function (res) {
         return api("GET", "/api/cards").then(function (list) {
           cards = [];
@@ -790,17 +989,21 @@
               cards = full.map(function (x) { return x.card; });
               currentId = cards.length ? cards[0].id : null;
               renderAll(); refreshRepo();
-              toast("已导入 " + res.imported + " 张卡");
+              toast(tr("已导入 ", "Imported ") + res.imported + tr(" 张卡", " cards"));
             });
         });
-      }).catch(function (e) { toast("导入失败：" + e.message, true); });
+      }).catch(function (e) { toast(tr("导入失败：", "Import failed: ") + e.message, true); });
     };
     r.readAsText(file, "utf-8");
   }
 
   /* ---------- 启动 ---------- */
   function boot() {
-    api("GET", "/api/health").catch(function (e) { toast("后端未启动：" + e.message, true); });
+    applyChrome();
+    document.getElementById("btnLang").addEventListener("click", function () {
+      setLang(LANG === "en" ? "zh" : "en");
+    });
+    api("GET", "/api/health").catch(function (e) { toast(tr("后端未启动：", "Backend not running: ") + e.message, true); });
     api("GET", "/api/cards").then(function (list) {
       return Promise.all(list.cards.map(function (s) { return api("GET", "/api/cards/" + encodeURIComponent(s.id)); }));
     }).then(function (full) {
@@ -808,7 +1011,7 @@
       currentId = cards.length ? cards[0].id : null;
       renderAll();
       return refreshRepo();
-    }).catch(function (e) { toast("加载失败：" + e.message, true); });
+    }).catch(function (e) { toast(tr("加载失败：", "Load failed: ") + e.message, true); });
 
     document.getElementById("btnNew").addEventListener("click", newCard);
     document.getElementById("btnBaseline").addEventListener("click", doBaseline);

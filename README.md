@@ -61,7 +61,8 @@ The workbench:
 ## Language status
 
 - The project site is available in [English](site/index.html) and [中文](site/zh.html).
-- The methodology documents, ADRs, and the workbench UI are currently in Chinese.
+- The methodology documents and ADRs are currently in Chinese.
+- The workbench UI is bilingual (English / Chinese) and defaults to English outside Chinese locales.
 - English translations are welcome; when translating an ADR, treat the Chinese original as authoritative and add the translation as a separate file rather than rewriting history.
 
 ## License
