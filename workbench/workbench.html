@@ -100,6 +100,17 @@
   .jhint { font-size: 0.7rem; color: var(--accent); margin-top: 0.4rem; }
   .jfact { border: 1px solid var(--rule); background: var(--bg); padding: 0.6rem 0.7rem; margin-bottom: 0.7rem; font-family: var(--mono); font-size: 0.7rem; white-space: pre-wrap; max-height: 220px; overflow: auto; }
 
+  #helpBox { margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid var(--rule); }
+  #helpBox details { border-bottom: 1px solid var(--rule); padding: 0.3rem 0; }
+  #helpBox summary { cursor: pointer; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; color: var(--accent2); padding: 0.25rem 0; }
+  #helpBox summary:hover { color: var(--ink); }
+  #helpBox .help-body { font-size: 0.75rem; line-height: 1.65; color: var(--ink); padding: 0.3rem 0 0.5rem; }
+  #helpBox .help-body p { margin: 0.35rem 0; }
+  #helpBox .help-body ol, #helpBox .help-body ul { margin: 0.3rem 0; padding-left: 1.15rem; }
+  #helpBox .help-body li { margin: 0.25rem 0; }
+  #helpBox .help-body b { color: var(--accent2); }
+  #helpBox .help-body .dim { color: var(--muted); }
+
   .editor { padding: 1.2rem 1.5rem 5rem; min-width: 0; }
   .editor-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   .editor-head .mono { font-family: var(--mono); font-size: 0.66rem; color: var(--muted); letter-spacing: 0.08em; }
@@ -223,6 +234,7 @@
       卡以 JSON 存在 <code>workbench/data/cards/</code>；提交时只把这一张卡写成
       <code>runs/*.md</code> 并单独提交，不会带上工作区其他改动。
     </div>
+    <div id="helpBox"></div>
   </aside>
 
   <section class="editor" id="editor"></section>
@@ -454,6 +466,89 @@
     try { localStorage.setItem("wb.lang", l); } catch (e) {}
     location.reload();
   }
+  /* ---------- 使用说明（折叠面板，双语） ---------- */
+  function helpBlock(open, title, body) {
+    return '<details' + (open ? ' open' : '') + '><summary>' + title + '</summary><div class="help-body">' + body + '</div></details>';
+  }
+  var HELP_ZH = [
+    helpBlock(true, "① 三分钟上手", [
+      '<ol>',
+      '<li>点「新建卡」，填标题、变更类别、owner（<b>指名到人</b>，不能写"某人"）。</li>',
+      '<li>填授权包六项、回滚路径；每条控制命题六字段填齐。字段留白可以保存，但门禁不过不能往下走。</li>',
+      '<li>右上状态依次推进：草稿 → 已授权 → 执行中 → 待验收 → 已验收。<b>门禁由服务端强制</b>，不过会被拒绝。</li>',
+      '<li>「提交登记」把卡导出为 runs/*.md 并单独 git commit。提交后再改卡，看板会计入「待提交」。</li>',
+      '<li>命题判定在「判定模式」里做（见③）；业务命题闭合后，卡才能标「已验收」。</li>',
+      '</ol>'
+    ].join("")),
+    helpBlock(false, "② 术语（人话版）", [
+      '<p><b>控制命题</b>：这次变更"做没做对"的判断句，如"只改了一个文件"。每条必须有证据字段、采集人、判定人。</p>',
+      '<p><b>业务命题</b>：这次变更"值不值"的结果判断，如"Agent 能自己发现工作台"。与控制命题分开登记，不能互相代替。</p>',
+      '<p><b>已登记可达</b>：证据可查询且逐项核对过。门槛高：要 EPC 导出齐全 + 判定人 ≠ 采集人；不满足就标「假设可达」。</p>',
+      '<p><b>假设可达</b>：证据大概能查到，但没完整核对。不是丢脸，是诚实。</p>',
+      '<p><b>闭合 / 条件闭合 / 未闭合</b>：判定人看过证据后的结论——成立 / 带前提成立 / 还没判或不成立。</p>',
+      '<p><b>门禁</b>：8 条硬规则，服务端强制。没过就不能授权、验收或提交，不是前端吓唬人。</p>',
+      '<p><b>判定人 ≠ 产出者</b>：谁干的活谁不能自己判。这是这套东西的底线。</p>',
+      '<p><b>EPC（证据包封面）</b>：证据从哪导出、什么时候、文件哈希——防"事后补证据"。</p>'
+    ].join("")),
+    helpBlock(false, "③ 判定模式怎么用", [
+      '<ul>',
+      '<li>编辑页右上「判定模式」进入，卡片变只读；「返回编辑」退出。</li>',
+      '<li>填了 base/change commit 的卡会自动显示 <b>git 事实面板</b>（diff 统计），对照命题逐条核对。</li>',
+      '<li>每条命题点一个闭合结论，<b>即点即存</b>，右栏门禁同步刷新。</li>',
+      '<li>§10 填判定人和结论，「填入当前时间」自动打时间戳。</li>',
+      '<li>业务命题未闭合又必须推进：§11 签署接受残余风险（接受人 + 时间），门禁 7 才放行。</li>',
+      '<li><b>代录</b>：owner 口头判定、Agent 代填可以，但判定人必须写 owner，不能写 Agent。</li>',
+      '</ul>'
+    ].join("")),
+    helpBlock(false, "④ 看板计数口径", [
+      '<p><b>未闭合</b>：任一控制命题未闭合，或业务命题未闭合。</p>',
+      '<p><b>待判定</b>：§10 判定结论还空着。</p>',
+      '<p><b>待提交</b>：从没提交过，或提交后又改过（防"改了忘提交"）。</p>',
+      '<p class="dim">点 chip 过滤列表，再点一次取消。</p>'
+    ].join(""))
+  ].join("");
+  var HELP_EN = [
+    helpBlock(true, "① Quick start (3 min)", [
+      '<ol>',
+      '<li>Click "New card"; fill in the title, category, and owner (<b>a named person</b>, not "someone").</li>',
+      '<li>Fill the six authorization fields and the rollback path; complete all six fields per control proposition. Blank fields save fine, but gates block the next step.</li>',
+      '<li>Advance the status: Draft → Authorized → Executing → To accept → Accepted. <b>Gates are enforced server-side.</b></li>',
+      '<li>"Commit" exports the card to runs/*.md and commits only that file. Editing afterwards marks the card "To commit" on the board.</li>',
+      '<li>Judge propositions in "Judge mode" (see ③); the card can be Accepted only after the business proposition closes.</li>',
+      '</ol>'
+    ].join("")),
+    helpBlock(false, "② Terms in plain English", [
+      '<p><b>Control proposition</b>: a checkable "was it done right" statement, e.g. "only one file changed". Each needs evidence fields, a collector, and a judge.</p>',
+      '<p><b>Business proposition</b>: a "was it worth it" outcome statement. Registered separately; never replaced by control propositions.</p>',
+      '<p><b>Declared reachable</b>: evidence is queryable AND verified item by item. High bar: complete EPC export + judge ≠ collector. Otherwise mark "Assumed reachable".</p>',
+      '<p><b>Assumed reachable</b>: evidence is probably queryable but not fully verified. Not a failure—just honesty.</p>',
+      '<p><b>Closed / Conditionally closed / Unclosed</b>: the judge\'s conclusion after seeing the evidence—holds / holds with conditions / not yet judged or fails.</p>',
+      '<p><b>Gates</b>: 8 hard rules enforced by the server. No authorization, acceptance, or commit without them.</p>',
+      '<p><b>Judge ≠ producer</b>: whoever did the work cannot judge it. This is the bottom line.</p>',
+      '<p><b>EPC (evidence package cover)</b>: where the evidence was exported, when, and its file hash—against after-the-fact evidence.</p>'
+    ].join("")),
+    helpBlock(false, "③ How to use Judge mode", [
+      '<ul>',
+      '<li>Enter via "Judge mode" at the top right; the card becomes read-only. "Back to editing" exits.</li>',
+      '<li>Cards with base/change commits show a <b>git facts panel</b> (diff stat) for verifying propositions.</li>',
+      '<li>Click a closure per proposition—<b>saved immediately</b>; the gates panel refreshes.</li>',
+      '<li>§10: fill in judge and conclusion; "Fill current time" stamps the time.</li>',
+      '<li>If the business proposition stays unclosed but work must proceed: sign §11 (acceptor + time) to pass gate 7.</li>',
+      '<li><b>Recording on behalf</b>: the owner may judge verbally and an agent may type it in, but the judge field must name the owner, never the agent.</li>',
+      '</ul>'
+    ].join("")),
+    helpBlock(false, "④ Board counters", [
+      '<p><b>Unclosed</b>: any control proposition unclosed, or the business proposition unclosed.</p>',
+      '<p><b>To judge</b>: the §10 conclusion is still empty.</p>',
+      '<p><b>To commit</b>: never committed, or edited after the last commit.</p>',
+      '<p class="dim">Click a chip to filter; click again to clear.</p>'
+    ].join(""))
+  ].join("");
+  function renderHelp() {
+    var hb = document.getElementById("helpBox");
+    if (hb) hb.innerHTML = LANG === "en" ? HELP_EN : HELP_ZH;
+  }
+
   function applyChrome() {
     document.documentElement.lang = LANG === "zh" ? "zh-CN" : "en";
     document.title = LANG === "en" ? "Change Card Workbench · AI-Native Organization Design" : "变更卡工作台 · AI 原生组织设计";
@@ -465,6 +560,7 @@
     });
     var b = document.getElementById("btnLang");
     if (b) b.textContent = LANG === "en" ? "中文" : "EN";
+    renderHelp();
   }
 
 
