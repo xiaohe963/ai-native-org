@@ -89,6 +89,17 @@
   .bd-chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .bd-chip.on b { color: var(--accent); }
 
+  .jctrl { border: 1px solid var(--rule); background: var(--panel); padding: 0.7rem 0.8rem; margin-bottom: 0.6rem; }
+  .jprop { font-size: 0.9rem; line-height: 1.5; }
+  .jprop b { font-family: var(--mono); color: var(--accent); margin-right: 0.35rem; }
+  .jmeta { font-family: var(--mono); font-size: 0.66rem; color: var(--muted); margin-top: 0.3rem; line-height: 1.6; }
+  .jact { display: flex; gap: 0.35rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .jbtn { border: 1px solid var(--rule); background: transparent; padding: 0.22rem 0.6rem; font-family: var(--mono); font-size: 0.68rem; cursor: pointer; color: var(--muted); }
+  .jbtn:hover { border-color: var(--ink); }
+  .jbtn.on { border-color: var(--accent2); color: var(--accent2); background: var(--accent2-soft); }
+  .jhint { font-size: 0.7rem; color: var(--accent); margin-top: 0.4rem; }
+  .jfact { border: 1px solid var(--rule); background: var(--bg); padding: 0.6rem 0.7rem; margin-bottom: 0.7rem; font-family: var(--mono); font-size: 0.7rem; white-space: pre-wrap; max-height: 220px; overflow: auto; }
+
   .editor { padding: 1.2rem 1.5rem 5rem; min-width: 0; }
   .editor-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   .editor-head .mono { font-family: var(--mono); font-size: 0.66rem; color: var(--muted); letter-spacing: 0.08em; }
@@ -235,6 +246,7 @@
 
   var cards = [], currentId = null, saving = false, saveTimer = null;
   var boardFilter = null; // null | "open" | "unjudged" | "uncommitted"
+  var judgeMode = false; // 判定模式：卡片只读，逐条命题核对 + 判定/签署留痕
   var el = {
     editor: document.getElementById("editor"),
     cardList: document.getElementById("cardList"),
@@ -425,7 +437,16 @@
     "空白 = 未接受": "Blank = not accepted",
     "全部": "All",
     "待判定": "To judge",
-    "待提交": "To commit"
+    "待提交": "To commit",
+    "判定模式": "Judge mode",
+    "返回编辑": "Back to editing",
+    "判定视图：卡片只读。逐条核对命题与事实后点闭合结论；判定人须 ≠ 产出者，判定与签署留痕于本卡。": "Judge view: the card is read-only. Verify each proposition against the facts, then click a closure. The judge must differ from the producer; judgments and sign-offs are recorded on the card.",
+    "git 事实（base..change）": "Git facts (base..change)",
+    "已登记可达：判定人须 ≠ 采集人": "Declared reachable: judge must differ from collector",
+    "业务命题": "Business proposition",
+    "填入当前时间": "Fill current time",
+    "§11 签署（owner）": "§11 sign-off (owner)",
+    "签署 = 接受残余风险；此处只留痕接受人与时间，其余字段回编辑模式填。": "Signing accepts the residual risk; only the acceptor and time are recorded here—fill the rest in edit mode."
   };
   function t(s) { return LANG === "en" ? (EN[s] || s) : s; }
   function tr(zh, en) { return LANG === "en" ? en : zh; }
@@ -547,13 +568,20 @@
       api("PUT", "/api/cards/" + encodeURIComponent(c.id), c)
         .then(function (res) {
           var i = cards.map(function (x) { return x.id; }).indexOf(c.id);
-          if (i >= 0 && res.card) cards[i] = res.card;
+          if (i >= 0 && res.card) {
+            // 保持对象引用：编辑/判定闭包持有原对象，整体替换会让后续修改丢失
+            Object.keys(cards[i]).forEach(function (k) { delete cards[i][k]; });
+            Object.keys(res.card).forEach(function (k) { cards[i][k] = res.card[k]; });
+          }
           el.saveState.textContent = t("已保存") + " " + nowISO().slice(11, 19);
           renderList();
         })
         .catch(function (e) {
           var i = cards.map(function (x) { return x.id; }).indexOf(c.id);
-          if (i >= 0) cards[i] = snapshot[i];
+          if (i >= 0) {
+            Object.keys(cards[i]).forEach(function (k) { delete cards[i][k]; });
+            Object.keys(snapshot[i]).forEach(function (k) { cards[i][k] = snapshot[i][k]; });
+          }
           el.saveState.textContent = t("保存被拒");
           toast(tr("服务端拒绝保存：", "Server rejected save: ") + e.message, true);
           renderEditor();
@@ -669,6 +697,7 @@
       if (b) b.addEventListener("click", newCard);
       return;
     }
+    if (judgeMode) { renderJudge(c); return; }
     var ext = c.external || {};
     var ctrlHtml = (c.controls || []).map(function (x, i) {
       return '<div class="ctrl">' +
@@ -693,7 +722,9 @@
       '<div class="editor-head"><div>' +
       '<span class="mono">' + esc(c.id) + ' · ' + esc(c.updatedAt || "") + '</span>' +
       '<h1 id="edTitle">' + (esc(c.title) || (LANG === "en" ? "(untitled change)" : "（未命名变更）")) + '</h1></div>' +
-      '<span class="badge" id="edBadge">' + esc(t(c.status)) + '</span></div>' +
+      '<div style="display:flex;gap:.4rem;align-items:center">' +
+      '<button class="btn" id="btnJudgeMode">' + t("判定模式") + '</button>' +
+      '<span class="badge" id="edBadge">' + esc(t(c.status)) + '</span></div></div>' +
 
       (ext.exportedPath
         ? '<div class="okline">' + t("已提交：") + '<code>' + esc(ext.exportedPath) + '</code> · ' + t("卡提交") + ' <span class="sha">' + esc(String(ext.cardCommit || "").slice(0, 7)) + '</span> · ' + esc(ext.committedAt || "") + '</div>'
@@ -849,6 +880,113 @@
     if (bl) bl.addEventListener("click", loadLog);
     var bd = document.getElementById("btnDiff");
     if (bd) bd.addEventListener("click", showDiff);
+    var bj = document.getElementById("btnJudgeMode");
+    if (bj) bj.addEventListener("click", function () { judgeMode = true; renderAll(); });
+  }
+
+  /* ---------- 判定模式 ---------- */
+  function renderJudge(c) {
+    var j = c.judgment || {};
+    var res = c.residual || {};
+    var html =
+      '<div class="editor-head"><div>' +
+      '<span class="mono">' + esc(c.id) + ' · ' + t("判定模式") + '</span>' +
+      '<h1>' + (esc(c.title) || (LANG === "en" ? "(untitled change)" : "（未命名变更）")) + '</h1></div>' +
+      '<div style="display:flex;gap:.4rem;align-items:center">' +
+      '<button class="btn" id="btnBackEdit">' + t("返回编辑") + '</button>' +
+      '<span class="badge" id="edBadge">' + esc(t(c.status)) + '</span></div></div>' +
+      '<div class="warn">' + t("判定视图：卡片只读。逐条核对命题与事实后点闭合结论；判定人须 ≠ 产出者，判定与签署留痕于本卡。") + '</div>';
+
+    if (c.rollback && c.rollback.baseCommit && c.rollback.changeCommit) {
+      html += sec("J0", "git 事实（base..change）") + '<div class="jfact" id="jFact">' + tr("读取中…", "Loading…") + '</div>' + secEnd();
+    }
+
+    html += sec("J1", "控制命题");
+    (c.controls || []).forEach(function (x, i) {
+      html += '<div class="jctrl">' +
+        '<div class="jprop"><b>' + esc(x.id) + '</b>' + esc(x.proposition || "—") + '</div>' +
+        '<div class="jmeta">' + t("证据字段 / 登记位置") + ': ' + esc(x.evidence || "—") + ' · ' + t("采集人") + ': ' + esc(x.collector || "—") + ' · ' + t("状态（五值）") + ': ' + esc(t(x.status)) + '</div>' +
+        '<div class="jact">' +
+        ["闭合", "条件闭合", "未闭合"].map(function (s) {
+          return '<button class="jbtn' + (x.closure === s ? " on" : "") + '" data-judge="' + i + '" data-val="' + s + '">' + esc(t(s)) + '</button>';
+        }).join("") +
+        '</div>' +
+        (x.status === "已登记可达" ? '<div class="jhint">' + t("已登记可达：判定人须 ≠ 采集人") + '（' + esc(x.collector || "—") + '）</div>' : "") +
+        '</div>';
+    });
+    html += secEnd();
+
+    html += sec("J2", "业务命题") +
+      '<div class="jctrl"><div class="jprop"><b>' + esc((c.business || {}).id || "B-1") + '</b>' + esc((c.business || {}).proposition || "—") + '</div>' +
+      '<div class="jact">' +
+      ["闭合", "未闭合"].map(function (s) {
+        return '<button class="jbtn' + ((c.business || {}).status === s ? " on" : "") + '" data-biz="' + s + '">' + esc(t(s)) + '</button>';
+      }).join("") + '</div></div>' + secEnd();
+
+    html += sec("J3", "判定记录") + '<div class="grid">' +
+      field("判定人", "judgment.judge") +
+      '<label class="f"><span>' + t("判定时间") + '</span><input data-path="judgment.time" value="' + esc(j.time || "") + '"></label>' +
+      '</div>' +
+      '<p><button class="btn" id="btnJudgeTime">' + t("填入当前时间") + '</button></p>' +
+      '<div class="grid">' + area("判定结论", "judgment.conclusion", 2, { wide: true }) + '</div>' + secEnd();
+
+    html += sec("J4", "§11 签署（owner）") + '<div class="grid">' +
+      field("接受人（姓名 + 账号）", "residual.acceptor") +
+      '<label class="f"><span>' + t("接受时间") + '</span><input data-path="residual.acceptedAt" value="' + esc(res.acceptedAt || "") + '"></label>' +
+      '</div>' +
+      '<p><button class="btn" id="btnSignTime">' + t("填入当前时间") + '</button></p>' +
+      '<div class="jhint">' + t("签署 = 接受残余风险；此处只留痕接受人与时间，其余字段回编辑模式填。") + '</div>' + secEnd();
+
+    el.editor.innerHTML = html;
+    bindJudge(c);
+    updateBadge();
+    refreshGates();
+    renderList();
+
+    var jf = document.getElementById("jFact");
+    if (jf) {
+      api("GET", "/api/repo/diff?base=" + encodeURIComponent(c.rollback.baseCommit) + "&change=" + encodeURIComponent(c.rollback.changeCommit))
+        .then(function (d) { jf.textContent = d.range + "\n" + (d.stat || ""); })
+        .catch(function (e) { jf.textContent = e.message; });
+    }
+  }
+  function bindJudge(c) {
+    document.getElementById("btnBackEdit").addEventListener("click", function () { judgeMode = false; renderAll(); });
+    Array.prototype.forEach.call(el.editor.querySelectorAll("[data-judge]"), function (b) {
+      b.addEventListener("click", function () {
+        c.controls[parseInt(b.getAttribute("data-judge"), 10)].closure = b.getAttribute("data-val");
+        c.updatedAt = nowISO();
+        queueSave(); renderJudge(c);
+      });
+    });
+    Array.prototype.forEach.call(el.editor.querySelectorAll("[data-biz]"), function (b) {
+      b.addEventListener("click", function () {
+        c.business.status = b.getAttribute("data-biz");
+        c.updatedAt = nowISO();
+        queueSave(); renderJudge(c);
+      });
+    });
+    var bt = document.getElementById("btnJudgeTime");
+    if (bt) bt.addEventListener("click", function () {
+      c.judgment.time = nowISO();
+      var inp = el.editor.querySelector('[data-path="judgment.time"]');
+      if (inp) inp.value = c.judgment.time;
+      queueSave();
+    });
+    var bs = document.getElementById("btnSignTime");
+    if (bs) bs.addEventListener("click", function () {
+      c.residual.acceptedAt = nowISO();
+      var inp2 = el.editor.querySelector('[data-path="residual.acceptedAt"]');
+      if (inp2) inp2.value = c.residual.acceptedAt;
+      queueSave();
+    });
+    Array.prototype.forEach.call(el.editor.querySelectorAll("[data-path]"), function (inp) {
+      inp.addEventListener("change", function () {
+        setPath(c, inp.getAttribute("data-path"), inp.value);
+        c.updatedAt = nowISO();
+        queueSave();
+      });
+    });
   }
 
   function enforceLocal(c, inp, p, val) {
