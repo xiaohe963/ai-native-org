@@ -24,7 +24,7 @@ required, and under what conditions a claim should be overturned.
 | --- | --- |
 | `docs/` | Five documents: domain model, decision rights, evidence, context flow, feedback (currently in Chinese) |
 | `decisions/` | 15 ADRs; 1 currently accepted |
-| `templates/change-card.md` | Change card v1.1 with eight gates |
+| `templates/change-card.md` | Change card v1.2 with eight gates |
 | `playbooks/` | How to design a complete proposal |
 | `evals/` | Comparative evaluation method |
 | `cases/` | Real cases (only a template so far) |

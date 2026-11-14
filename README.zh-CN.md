@@ -21,7 +21,7 @@
 | --- | --- |
 | `docs/` | 五份概念与规则：领域模型、决策权、证据、信息流、复盘 |
 | `decisions/` | 15 条 ADR；当前 1 条为「已接受」 |
-| `templates/change-card.md` | 变更卡 v1.1，含 8 条门禁 |
+| `templates/change-card.md` | 变更卡 v1.2，含 8 条门禁 |
 | `playbooks/` | 设计一条完整方案的步骤 |
 | `evals/` | 对照评估方法 |
 | `cases/` | 真实案例（目前只有模板） |
