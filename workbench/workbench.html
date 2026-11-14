@@ -82,6 +82,12 @@
   .carditem .t { display: block; font-size: 0.84rem; line-height: 1.35; }
   .carditem .m { display: flex; justify-content: space-between; gap: 0.5rem; font-family: var(--mono); font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
   .side-note { margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid var(--rule); font-size: 0.72rem; color: var(--muted); line-height: 1.55; }
+  .boardbar { display: flex; flex-wrap: wrap; gap: 0.3rem; padding-bottom: 0.6rem; margin-bottom: 0.55rem; border-bottom: 1px solid var(--rule); }
+  .bd-chip { border: 1px solid var(--rule); background: transparent; padding: 0.16rem 0.42rem; font-family: var(--mono); font-size: 0.63rem; letter-spacing: 0.03em; color: var(--muted); cursor: pointer; }
+  .bd-chip b { color: var(--ink); margin-right: 0.22rem; }
+  .bd-chip:hover { border-color: var(--ink); }
+  .bd-chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .bd-chip.on b { color: var(--accent); }
 
   .editor { padding: 1.2rem 1.5rem 5rem; min-width: 0; }
   .editor-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
@@ -196,6 +202,7 @@
 <main class="app">
   <aside class="sidebar">
     <div class="side-head"><span data-i18n="卡列表">卡列表</span><span id="cardCount">0</span></div>
+    <div class="boardbar" id="boardBar"></div>
     <div id="cardList"></div>
     <div class="side-note" data-i18n-html="不想用命令行：双击 <code>start.bat</code>；或在本目录执行 <code>node server.js</code>，然后打开 <code>http://127.0.0.1:8787</code>。">
       不想用命令行：双击 <code>start.bat</code>；或在本目录执行 <code>node server.js</code>，
@@ -227,10 +234,12 @@
   "use strict";
 
   var cards = [], currentId = null, saving = false, saveTimer = null;
+  var boardFilter = null; // null | "open" | "unjudged" | "uncommitted"
   var el = {
     editor: document.getElementById("editor"),
     cardList: document.getElementById("cardList"),
     cardCount: document.getElementById("cardCount"),
+    boardBar: document.getElementById("boardBar"),
     gateList: document.getElementById("gateList"),
     gateScore: document.getElementById("gateScore"),
     counts: document.getElementById("counts"),
@@ -413,7 +422,10 @@
     "六项缺一视为未授权": "Six items; missing one means unauthorized",
     "状态五值 + 闭合三值": "Five statuses + three closure values",
     "登记层，不是导出审计": "Register layer, not an export audit",
-    "空白 = 未接受": "Blank = not accepted"
+    "空白 = 未接受": "Blank = not accepted",
+    "全部": "All",
+    "待判定": "To judge",
+    "待提交": "To commit"
   };
   function t(s) { return LANG === "en" ? (EN[s] || s) : s; }
   function tr(zh, en) { return LANG === "en" ? en : zh; }
@@ -551,13 +563,59 @@
   }
 
   /* ---------- 渲染 ---------- */
+  /* 跨卡看板口径：
+     未闭合 = 任一控制命题未闭合，或业务命题未闭合
+     待判定 = §10 判定结论为空
+     待提交 = 从未提交，或提交后又改过（updatedAt 晚于 committedAt） */
+  function isOpen(c) {
+    return (c.controls || []).some(function (x) { return x.closure === "未闭合"; }) ||
+      (c.business || {}).status === "未闭合";
+  }
+  function isUnjudged(c) {
+    return !String((c.judgment || {}).conclusion || "").trim();
+  }
+  function isUncommitted(c) {
+    var ext = c.external || {};
+    return !ext.cardCommit || String(c.updatedAt || "") > String(ext.committedAt || "");
+  }
+  function matchFilter(c) {
+    if (boardFilter === "open") return isOpen(c);
+    if (boardFilter === "unjudged") return isUnjudged(c);
+    if (boardFilter === "uncommitted") return isUncommitted(c);
+    return true;
+  }
+  function renderBoard() {
+    if (!el.boardBar) return;
+    function chip(key, label, n) {
+      return '<button class="bd-chip' + (boardFilter === key ? " on" : "") + '" data-filter="' + (key || "") + '"><b>' + n + '</b>' + esc(t(label)) + '</button>';
+    }
+    el.boardBar.innerHTML =
+      chip(null, "全部", cards.length) +
+      chip("open", "未闭合", cards.filter(isOpen).length) +
+      chip("unjudged", "待判定", cards.filter(isUnjudged).length) +
+      chip("uncommitted", "待提交", cards.filter(isUncommitted).length);
+    Array.prototype.forEach.call(el.boardBar.querySelectorAll("[data-filter]"), function (b) {
+      b.addEventListener("click", function () {
+        var f = b.getAttribute("data-filter") || null;
+        boardFilter = (boardFilter === f) ? null : f;
+        renderList();
+      });
+    });
+  }
   function renderList() {
-    el.cardCount.textContent = String(cards.length);
+    var shown = cards.filter(matchFilter);
+    el.cardCount.textContent = boardFilter ? (shown.length + " / " + cards.length) : String(cards.length);
     if (!cards.length) {
       el.cardList.innerHTML = '<div class="side-note">' + tr("还没有卡。点「新建卡」。", "No cards yet. Click \"New card\".") + '</div>';
+      renderBoard();
       return;
     }
-    el.cardList.innerHTML = cards.map(function (c) {
+    if (!shown.length) {
+      el.cardList.innerHTML = '<div class="side-note">' + tr("该过滤条件下没有卡。", "No cards match this filter.") + '</div>';
+      renderBoard();
+      return;
+    }
+    el.cardList.innerHTML = shown.map(function (c) {
       return '<div class="carditem' + (c.id === currentId ? " active" : "") + '" data-id="' + esc(c.id) + '">' +
         '<span class="t">' + (esc(c.title) || (LANG === "en" ? "(untitled change)" : "（未命名变更）")) + '</span>' +
         '<span class="m"><span>' + esc(c.id) + '</span><span>' + esc(t(c.status)) + '</span></span></div>';
@@ -569,6 +627,7 @@
         renderAll();
       });
     });
+    renderBoard();
   }
 
   function field(label, p, opts) {
