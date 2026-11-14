@@ -71,7 +71,7 @@ It exposes 8 tools: list / read / create / update cards, commit, export markdown
 ## Current state (honest counts)
 
 - 15 ADRs, 1 accepted (ADR-015: git as a repository-level evidence capability)
-- 6 change cards live in the private evidence archive; this repository does not include `runs/`
+- 7 change cards live in the private evidence archive; this repository does not include `runs/`
 - 0 real organizational cases; no L3; no independent second-party judgment
 - The methodology is still self-referential: it validates its own conventions, not outcomes in an external organization
 
