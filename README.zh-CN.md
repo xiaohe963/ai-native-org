@@ -47,10 +47,27 @@ node server.js
 - 只把一张卡写成 `runs/<日期>-<slug>.md`，并只提交这一个文件
 - 在服务端强制门禁：未通过时不能标「已授权 / 已验收 / 已登记可达」
 
+### Agent 接入（MCP）
+
+`workbench/mcp.js` 是零依赖的 stdio MCP server（薄壳转发到本地 REST，后端未运行会自动拉起）。在 MCP 客户端（如 Trae）中配置：
+
+```json
+{
+  "mcpServers": {
+    "change-card-workbench": {
+      "command": "node",
+      "args": ["<workbench/mcp.js 的绝对路径>"]
+    }
+  }
+}
+```
+
+提供 8 个工具：列卡、读卡、建卡、改卡、提交、导出 markdown、git 状态、git diff。**不含判定与签署**——那是 owner 在前端「判定模式」里的动作；Agent 代录须有 owner 明确指令。工具细节见 `mcp.js` 顶部注释。
+
 ## 当前状态（诚实计数）
 
 - 15 条 ADR，1 条已接受（ADR-015：git 作为登记级证据）
-- 5 张变更卡在私有证据档案中；本仓库不包含 `runs/`
+- 6 张变更卡在私有证据档案中；本仓库不包含 `runs/`
 - 0 个真实组织案例；无 L3；没有第二方独立判定
 - 方法论仍处于自我指涉阶段：它验证的是自己的口径，不是外部组织的效果
 

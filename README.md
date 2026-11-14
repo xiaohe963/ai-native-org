@@ -51,10 +51,27 @@ The workbench:
 - writes one card to `runs/<date>-<slug>.md` and commits **only that file**
 - enforces gates server-side: it refuses to mark a card "authorized / accepted / declared reachable" when the gates fail
 
+### Agent access (MCP)
+
+`workbench/mcp.js` is a zero-dependency stdio MCP server (a thin shell forwarding to the local REST API; it auto-starts the backend if needed). Configure it in your MCP client (e.g. Trae):
+
+```json
+{
+  "mcpServers": {
+    "change-card-workbench": {
+      "command": "node",
+      "args": ["<absolute path to workbench/mcp.js>"]
+    }
+  }
+}
+```
+
+It exposes 8 tools: list / read / create / update cards, commit, export markdown, git status, git diff. **No judging or sign-off tools** — those are the owner's actions in the frontend "Judge mode"; agent recording on the owner's behalf requires an explicit owner instruction. See the header comment of `mcp.js` for details.
+
 ## Current state (honest counts)
 
 - 15 ADRs, 1 accepted (ADR-015: git as a repository-level evidence capability)
-- 5 change cards live in the private evidence archive; this repository does not include `runs/`
+- 6 change cards live in the private evidence archive; this repository does not include `runs/`
 - 0 real organizational cases; no L3; no independent second-party judgment
 - The methodology is still self-referential: it validates its own conventions, not outcomes in an external organization
 
