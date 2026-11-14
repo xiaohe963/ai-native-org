@@ -208,6 +208,7 @@
     <button class="btn danger" id="btnDelete" data-i18n="删除卡">删除卡</button>
     <span class="btn filebtn"><span data-i18n="导入 JSON">导入 JSON</span><input type="file" id="fileImport" accept=".json,application/json"></span>
     <button class="btn" id="btnExport" data-i18n="导出 JSON">导出 JSON</button>
+    <button class="btn" id="btnAgent" data-i18n="Agent 活动">Agent 活动</button>
     <button class="btn" id="btnLang">EN</button>
   </div>
 </header>
@@ -257,6 +258,7 @@
   "use strict";
 
   var cards = [], currentId = null, saving = false, saveTimer = null;
+  var agentView = false, agentTimer = null;
   var boardFilter = null; // null | "open" | "unjudged" | "uncommitted"
   var judgeMode = false; // 判定模式：卡片只读，逐条命题核对 + 判定/签署留痕
   var el = {
@@ -458,7 +460,11 @@
     "业务命题": "Business proposition",
     "填入当前时间": "Fill current time",
     "§11 签署（owner）": "§11 sign-off (owner)",
-    "签署 = 接受残余风险；此处只留痕接受人与时间，其余字段回编辑模式填。": "Signing accepts the residual risk; only the acceptor and time are recorded here—fill the rest in edit mode."
+    "签署 = 接受残余风险；此处只留痕接受人与时间，其余字段回编辑模式填。": "Signing accepts the residual risk; only the acceptor and time are recorded here—fill the rest in edit mode.",
+    "Agent 活动": "Agent activity",
+    "返回卡片": "Back to cards",
+    "Agent 经 MCP / REST 的写操作与事实核对实时留痕于此（5 秒刷新）。身份为调用方自我声明，防误不防恶；判定与签署仍只能由人完成。": "Agent writes and fact-checks via MCP / REST are recorded here in real time (5s refresh). Identity is self-declared by the caller—a guard against mistakes, not malice. Judging and sign-off remain human-only.",
+    "还没有记录。Agent 经 MCP 或 REST 的操作会实时出现在这里。": "No events yet. Agent operations via MCP or REST will appear here in real time."
   };
   function t(s) { return LANG === "en" ? (EN[s] || s) : s; }
   function tr(zh, en) { return LANG === "en" ? en : zh; }
@@ -591,7 +597,7 @@
   function api(method, url, body) {
     return fetch(url, {
       method: method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: Object.assign({ "X-Actor": "human" }, body ? { "Content-Type": "application/json" } : {}),
       body: body ? JSON.stringify(body) : undefined
     }).then(function (r) {
       return r.text().then(function (t) {
@@ -746,7 +752,9 @@
     }).join("");
     Array.prototype.forEach.call(el.cardList.querySelectorAll("[data-id]"), function (d) {
       d.addEventListener("click", function () {
-        if (d.getAttribute("data-id") === currentId) return;
+        var same = d.getAttribute("data-id") === currentId;
+        if (same && !agentView) return;
+        agentView = false;
         currentId = d.getAttribute("data-id");
         renderAll();
       });
@@ -785,6 +793,8 @@
   function secEnd() { return "</div>"; }
 
   function renderEditor() {
+    if (agentView) { renderAgent(); return; }
+    stopAgentPoll();
     var c = cur();
     if (!c) {
       el.editor.innerHTML = '<div class="empty">' + (LANG === "en" ? "No card selected.<br><br>" : "没有选中的卡。<br><br>") +
@@ -1139,6 +1149,73 @@
 
   function renderAll() { renderList(); renderEditor(); refreshGates(); applyChrome(); }
 
+  /* ---------- Agent 活动页 ---------- */
+  function actLabel(e) {
+    var p = e.path || "";
+    var m;
+    if (e.method === "GET" && p.indexOf("/api/repo/diff") === 0) {
+      m = /base=([^&]+)/.exec(p);
+      var mc = /change=([^&]+)/.exec(p);
+      return tr("核对 git 事实", "Verify git facts") + (m && mc ? "（" + decodeURIComponent(m[1]).slice(0, 7) + ".." + decodeURIComponent(mc[1]).slice(0, 7) + "）" : "");
+    }
+    var cid = /\/api\/cards\/([^/]+)/.exec(p);
+    var id = cid ? cid[1] : "";
+    if (e.method === "POST" && p === "/api/cards") return tr("新建卡", "Create card");
+    if (e.method === "PUT" && cid) return tr("保存卡", "Save card") + " " + id;
+    if (e.method === "DELETE" && cid) return tr("删除卡", "Delete card") + " " + id;
+    if (e.method === "POST" && /\/commit$/.test(p)) return tr("提交登记", "Commit card") + " " + id;
+    if (e.method === "POST" && /\/baseline$/.test(p)) return tr("记录基准", "Record baseline") + " " + id;
+    if (e.method === "POST" && /\/api\/cards\/import/.test(p)) return tr("导入卡", "Import cards");
+    if (e.method === "POST" && /\/api\/cards\/export/.test(p)) return tr("导出卡", "Export cards");
+    return e.method + " " + p;
+  }
+  function renderAgent() {
+    if (judgeMode) judgeMode = false;
+    var html =
+      '<div class="editor-head"><div>' +
+      '<span class="mono">Agent</span>' +
+      '<h1>' + t("Agent 活动") + '</h1></div>' +
+      '<button class="btn" id="btnAgentBack">' + t("返回卡片") + '</button></div>' +
+      '<div class="okline">' + t("Agent 经 MCP / REST 的写操作与事实核对实时留痕于此（5 秒刷新）。身份为调用方自我声明，防误不防恶；判定与签署仍只能由人完成。") + '</div>' +
+      '<div id="agentFeed" style="margin-top:1rem"><div class="side-note">' + tr("读取中…", "Loading…") + '</div></div>';
+    el.editor.innerHTML = html;
+    document.getElementById("btnAgentBack").addEventListener("click", function () { agentView = false; stopAgentPoll(); renderAll(); });
+    loadAgentFeed();
+    startAgentPoll();
+  }
+  function loadAgentFeed() {
+    api("GET", "/api/audit?n=60").then(function (d) {
+      if (!agentView) return;
+      var feed = document.getElementById("agentFeed");
+      if (!feed) return;
+      var evs = d.events || [];
+      if (!evs.length) {
+        feed.innerHTML = '<div class="side-note">' + t("还没有记录。Agent 经 MCP 或 REST 的操作会实时出现在这里。") + '</div>';
+        return;
+      }
+      feed.innerHTML = evs.map(function (e) {
+        var cls = e.actor === "agent" ? "ok" : e.actor === "human" ? "" : "dirty";
+        return '<div class="gate" style="grid-template-columns:64px 54px 1px 1fr">' +
+          '<span class="mono" style="font-size:.66rem;color:var(--muted)">' + esc(String(e.time || "").slice(11, 19)) + '</span>' +
+          '<span><span class="dot ' + cls + '"></span> <span class="mono" style="font-size:.66rem">' + esc(e.actor) + '</span></span>' +
+          '<span></span>' +
+          '<span class="gl" style="font-size:.78rem">' + esc(actLabel(e)) +
+          (e.status >= 400 ? ' <span style="color:var(--accent)">[' + e.status + ']</span>' : '') +
+          '</span></div>';
+      }).join("");
+    }).catch(function (e) {
+      var feed = document.getElementById("agentFeed");
+      if (feed && agentView) feed.innerHTML = '<div class="side-note">' + esc(e.message) + '</div>';
+    });
+  }
+  function startAgentPoll() {
+    stopAgentPoll();
+    agentTimer = setInterval(loadAgentFeed, 5000);
+  }
+  function stopAgentPoll() {
+    if (agentTimer) { clearInterval(agentTimer); agentTimer = null; }
+  }
+
   /* ---------- 仓库状态 ---------- */
   var repoClean = true;
   function refreshRepo() {
@@ -1307,6 +1384,11 @@
     }).catch(function (e) { toast(tr("加载失败：", "Load failed: ") + e.message, true); });
 
     document.getElementById("btnNew").addEventListener("click", newCard);
+    document.getElementById("btnAgent").addEventListener("click", function () {
+      agentView = !agentView;
+      if (!agentView) stopAgentPoll();
+      renderAll();
+    });
     document.getElementById("btnBaseline").addEventListener("click", doBaseline);
     document.getElementById("btnCommit").addEventListener("click", doCommit);
     document.getElementById("btnPreview").addEventListener("click", preview);

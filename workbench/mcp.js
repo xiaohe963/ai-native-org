@@ -32,7 +32,7 @@ function rest(method, p, body) {
     const data = body == null ? null : JSON.stringify(body);
     const req = http.request({
       host: HOST, port: PORT, path: p, method: method,
-      headers: data ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) } : {}
+      headers: Object.assign({ "X-Actor": "agent" }, data ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) } : {})
     }, (res) => {
       const chunks = [];
       res.on("data", (d) => chunks.push(d));

@@ -130,6 +130,35 @@ async function nextId() {
   return base + p2(n);
 }
 
+/* ---------- 审计（操作留痕） ---------- */
+/* actor 为调用方自我声明（X-Actor 头）：MCP 标 agent，前端标 human，直连默认 api。
+   防误不防恶：本地绑定 127.0.0.1，不做认证。 */
+const AUDIT = path.resolve(CARDS, "..", "audit.ndjson");
+function auditable(method, p) {
+  if (p === "/api/repo/diff" && method === "GET") return true; // 事实核对也算活动
+  return ["POST", "PUT", "DELETE"].indexOf(method) >= 0 && p.startsWith("/api/");
+}
+async function writeAudit(req, fullPath, status) {
+  try {
+    const actor = String(req.headers["x-actor"] || "api").slice(0, 32);
+    await fsp.appendFile(AUDIT, JSON.stringify({
+      time: nowISO(), actor, method: req.method, path: fullPath, status
+    }) + "\n", "utf8");
+  } catch (e) { process.stderr.write("audit 写入失败: " + e.message + "\n"); }
+}
+async function readAudit(n) {
+  const limit = Math.min(Math.max(Number(n) || 50, 1), 200);
+  try {
+    const text = await fsp.readFile(AUDIT, "utf8");
+    const events = text.trim().split("\n").filter(Boolean).slice(-limit).reverse()
+      .map((l) => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
+    return { events };
+  } catch (e) {
+    if (e.code === "ENOENT") return { events: [] };
+    throw e;
+  }
+}
+
 /* ---------- 模型与校验 ---------- */
 function blankCard(id) {
   return {
@@ -554,6 +583,10 @@ async function api(req, res, url) {
     return send(res, 200, await repoDiff(url.searchParams.get("base"), url.searchParams.get("change")));
   }
 
+  if (p === "/api/audit" && method === "GET") {
+    return send(res, 200, await readAudit(url.searchParams.get("n")));
+  }
+
   return send(res, 404, { error: "未知接口 " + method + " " + p });
 }
 
@@ -563,6 +596,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
     if (url.pathname.startsWith("/api/")) {
       await api(req, res, url);
+      if (auditable(req.method, url.pathname)) {
+        await writeAudit(req, url.pathname + url.search, res.statusCode);
+      }
     } else {
       await serveStatic(req, res, url.pathname);
     }
